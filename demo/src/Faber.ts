@@ -54,6 +54,17 @@ export class Faber extends BaseAgent {
     )
   }
 
+  private async printLegacyConnectionInvite() {
+    const {outOfBandRecord, invitation} = await this.agent.oob.createLegacyInvitation()
+    this.outOfBandId = outOfBandRecord.id
+
+    console.log(
+      Output.ConnectionLink,
+      invitation.toUrl({ domain: `http://localhost:${this.port}` }),
+      '\n'
+    )
+  }
+
   private async waitForConnection() {
     if (!this.outOfBandId) {
       throw new Error(redText(Output.MissingConnectionRecord))
@@ -94,8 +105,12 @@ export class Faber extends BaseAgent {
     console.log(greenText(Output.ConnectionEstablished))
   }
 
-  public async setupConnection() {
-    await this.printConnectionInvite()
+  public async setupConnection(useLegacy: boolean) {
+    if (useLegacy) {
+      await this.printLegacyConnectionInvite()
+    } else {
+      await this.printConnectionInvite()
+    }
     await this.waitForConnection()
   }
 

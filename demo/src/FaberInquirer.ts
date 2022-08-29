@@ -16,6 +16,7 @@ export const runFaber = async () => {
 
 enum PromptOptions {
   CreateConnection = 'Create connection invitation',
+  CreateLegacyConnection = 'Create legacy connection invitation',
   OfferCredential = 'Offer credential',
   RequestProof = 'Request proof',
   SendMessage = 'Send message',
@@ -44,7 +45,7 @@ export class FaberInquirer extends BaseInquirer {
   private async getPromptChoice() {
     if (this.faber.outOfBandId) return inquirer.prompt([this.inquireOptions(this.promptOptionsString)])
 
-    const reducedOption = [PromptOptions.CreateConnection, PromptOptions.Exit, PromptOptions.Restart]
+    const reducedOption = [PromptOptions.CreateConnection, PromptOptions.CreateLegacyConnection, PromptOptions.Exit, PromptOptions.Restart]
     return inquirer.prompt([this.inquireOptions(reducedOption)])
   }
 
@@ -55,6 +56,9 @@ export class FaberInquirer extends BaseInquirer {
     switch (choice.options) {
       case PromptOptions.CreateConnection:
         await this.connection()
+        break
+      case PromptOptions.CreateLegacyConnection:
+        await this.connection(true)
         break
       case PromptOptions.OfferCredential:
         await this.credential()
@@ -75,8 +79,8 @@ export class FaberInquirer extends BaseInquirer {
     await this.processAnswer()
   }
 
-  public async connection() {
-    await this.faber.setupConnection()
+  public async connection(useLegacy = false) {
+    await this.faber.setupConnection(useLegacy)
   }
 
   public async exitUseCase(title: string) {
