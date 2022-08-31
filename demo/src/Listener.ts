@@ -5,6 +5,7 @@ import type { FaberInquirer } from './FaberInquirer'
 import type {
   Agent,
   BasicMessageStateChangedEvent,
+  ConnectionStateChangedEvent,
   CredentialExchangeRecord,
   CredentialStateChangedEvent,
   ProofRecord,
@@ -15,8 +16,10 @@ import type BottomBar from 'inquirer/lib/ui/bottom-bar'
 import {
   BasicMessageEventTypes,
   BasicMessageRole,
+  ConnectionEventTypes,
   CredentialEventTypes,
   CredentialState,
+  DidExchangeState,
   ProofEventTypes,
   ProofState,
 } from '@aries-framework/core'
@@ -96,6 +99,13 @@ export class Listener {
   public proofAcceptedListener(faber: Faber, faberInquirer: FaberInquirer) {
     faber.agent.events.on(ProofEventTypes.ProofStateChanged, async ({ payload }: ProofStateChangedEvent) => {
       if (payload.proofRecord.state === ProofState.Done) {
+        await faberInquirer.processAnswer()
+      }
+    })
+  }
+  public connectionListener(faber: Faber, faberInquirer: FaberInquirer) {
+    faber.agent.events.on(ConnectionEventTypes.ConnectionStateChanged, async ({ payload }: ConnectionStateChangedEvent) => {
+      if (payload.connectionRecord.state === DidExchangeState.Completed) {
         await faberInquirer.processAnswer()
       }
     })

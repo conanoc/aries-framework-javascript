@@ -26,6 +26,14 @@ export class Faber extends BaseAgent {
   public static async build(): Promise<Faber> {
     const faber = new Faber(9001, 'faber')
     await faber.initializeAgent()
+
+    faber.httpInboundTransport.app.get('/invitation', async (req, res) => {
+      const {outOfBandRecord, invitation} = await faber.agent.oob.createLegacyInvitation()
+      faber.outOfBandId = outOfBandRecord.id
+      res.status(200).send(invitation.toUrl({ domain: `http://localhost:${faber.port}/invitation` }))
+      faber.waitForConnection()
+    })
+
     return faber
   }
 
@@ -65,7 +73,7 @@ export class Faber extends BaseAgent {
     )
   }
 
-  private async waitForConnection() {
+  public async waitForConnection() {
     if (!this.outOfBandId) {
       throw new Error(redText(Output.MissingConnectionRecord))
     }

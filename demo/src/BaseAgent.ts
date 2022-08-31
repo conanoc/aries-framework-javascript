@@ -1,7 +1,10 @@
 import type { InitConfig } from '@aries-framework/core'
+import type { Socket } from 'net'
 
-import { Agent, AutoAcceptCredential, AutoAcceptProof, HttpOutboundTransport } from '@aries-framework/core'
-import { agentDependencies, HttpInboundTransport } from '@aries-framework/node'
+import { Agent, AutoAcceptCredential, AutoAcceptProof, HttpOutboundTransport, WsOutboundTransport, ConsoleLogger, LogLevel } from '@aries-framework/core'
+import { agentDependencies, HttpInboundTransport, WsInboundTransport } from '@aries-framework/node'
+
+import { Server } from 'ws'
 
 import { greenText } from './OutputClass'
 
@@ -15,6 +18,8 @@ export class BaseAgent {
   public name: string
   public config: InitConfig
   public agent: Agent
+  public httpInboundTransport: HttpInboundTransport
+  private socketServer: Server
 
   public constructor(port: number, name: string) {
     this.name = name
@@ -34,7 +39,7 @@ export class BaseAgent {
           isProduction: false,
         },
       ],
-      endpoints: [`http://localhost:${this.port}`],
+      endpoints: [`ws://localhost:${this.port}`, `http://localhost:${this.port}`],
       autoAcceptConnections: true,
       autoAcceptCredentials: AutoAcceptCredential.ContentApproved,
       autoAcceptProofs: AutoAcceptProof.ContentApproved,
@@ -43,12 +48,23 @@ export class BaseAgent {
     this.config = config
 
     this.agent = new Agent(config, agentDependencies)
-    this.agent.registerInboundTransport(new HttpInboundTransport({ port }))
+    this.httpInboundTransport = new HttpInboundTransport({ port })
+    this.agent.registerInboundTransport(this.httpInboundTransport)
     this.agent.registerOutboundTransport(new HttpOutboundTransport())
+
+    this.socketServer = new Server({ noServer: true })
+    const wsInboundTransport = new WsInboundTransport({ server: this.socketServer })
+    this.agent.registerInboundTransport(wsInboundTransport)
+    this.agent.registerOutboundTransport(new WsOutboundTransport())
   }
 
   public async initializeAgent() {
     await this.agent.initialize()
+    this.httpInboundTransport.server?.on('upgrade', (request, socket, head) => {
+      this.socketServer.handleUpgrade(request, socket as Socket, head, (socket) => {
+        this.socketServer.emit('connection', socket, request)
+      })
+    })
     console.log(greenText(`\nAgent ${this.name} created!\n`))
   }
 }
