@@ -1,6 +1,4 @@
-import type {
-  ConnectionRecord,
-  ConnectionStateChangedEvent } from '@aries-framework/core'
+import type { ConnectionRecord, ConnectionStateChangedEvent } from '@aries-framework/core'
 
 import { ConnectionEventTypes } from '@aries-framework/core'
 
@@ -26,14 +24,6 @@ export class Faber extends BaseAgent {
   public static async build(): Promise<Faber> {
     const faber = new Faber(9001, 'faber')
     await faber.initializeAgent()
-
-    faber.httpInboundTransport.app.get('/invitation', async (req, res) => {
-      const {outOfBandRecord, invitation} = await faber.agent.oob.createLegacyInvitation()
-      faber.outOfBandId = outOfBandRecord.id
-      res.status(200).send(invitation.toUrl({ domain: `http://localhost:${faber.port}/invitation` }))
-      faber.waitForConnection()
-    })
-
     return faber
   }
 
@@ -63,14 +53,10 @@ export class Faber extends BaseAgent {
   }
 
   private async printLegacyConnectionInvite() {
-    const {outOfBandRecord, invitation} = await this.agent.oob.createLegacyInvitation()
+    const { outOfBandRecord, invitation } = await this.agent.oob.createLegacyInvitation()
     this.outOfBandId = outOfBandRecord.id
 
-    console.log(
-      Output.ConnectionLink,
-      invitation.toUrl({ domain: `http://localhost:${this.port}` }),
-      '\n'
-    )
+    console.log(Output.ConnectionLink, invitation.toUrl({ domain: `http://localhost:${this.port}` }), '\n')
   }
 
   public async waitForConnection() {
@@ -102,9 +88,8 @@ export class Faber extends BaseAgent {
         })
       })
 
-    const connectionRecord = await getConnectionRecord(this.outOfBandId)
-
     try {
+      const connectionRecord = await getConnectionRecord(this.outOfBandId)
       await this.agent.connections.returnWhenIsConnected(connectionRecord.id)
     } catch (e) {
       console.log(redText(`\nTimeout of 20 seconds reached.. Returning to home screen.\n`))

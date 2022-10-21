@@ -35,18 +35,33 @@ export class FaberInquirer extends BaseInquirer {
     this.listener = new Listener()
     this.promptOptionsString = Object.values(PromptOptions)
     this.listener.messageListener(this.faber.agent, this.faber.name)
-    this.listener.connectionListener(this.faber, this)
   }
 
   public static async build(): Promise<FaberInquirer> {
     const faber = await Faber.build()
-    return new FaberInquirer(faber)
+    const faberInquirer = new FaberInquirer(faber)
+
+    faber.httpInboundTransport.app.get('/invitation', async (req, res) => {
+      const { outOfBandRecord, invitation } = await faber.agent.oob.createLegacyInvitation()
+      faber.outOfBandId = outOfBandRecord.id
+      res.status(200).send(invitation.toUrl({ domain: `http://localhost:${faber.port}/invitation` }))
+      console.log('\n\n')
+      await faber.waitForConnection()
+      console.log('\nSelect "Restart" menu and choose "no" to refresh the menu')
+    })
+
+    return faberInquirer
   }
 
   private async getPromptChoice() {
     if (this.faber.outOfBandId) return inquirer.prompt([this.inquireOptions(this.promptOptionsString)])
 
-    const reducedOption = [PromptOptions.CreateConnection, PromptOptions.CreateLegacyConnection, PromptOptions.Exit, PromptOptions.Restart]
+    const reducedOption = [
+      PromptOptions.CreateConnection,
+      PromptOptions.CreateLegacyConnection,
+      PromptOptions.Exit,
+      PromptOptions.Restart,
+    ]
     return inquirer.prompt([this.inquireOptions(reducedOption)])
   }
 

@@ -103,13 +103,6 @@ export class Listener {
       }
     })
   }
-  public connectionListener(faber: Faber, faberInquirer: FaberInquirer) {
-    faber.agent.events.on(ConnectionEventTypes.ConnectionStateChanged, async ({ payload }: ConnectionStateChangedEvent) => {
-      if (payload.connectionRecord.state === DidExchangeState.Completed) {
-        await faberInquirer.processAnswer()
-      }
-    })
-  }
 
   public async newAcceptedPrompt(title: string, faberInquirer: FaberInquirer) {
     this.turnListenerOn()

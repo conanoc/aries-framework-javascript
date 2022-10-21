@@ -30,6 +30,7 @@ import {
 } from '@aries-framework/core'
 import { HttpInboundTransport, agentDependencies, WsInboundTransport } from '@aries-framework/node'
 
+const useLegacyInvitation = process.env.USE_LEGACY_INVITATION ? true : false
 const port = process.env.AGENT_PORT ? Number(process.env.AGENT_PORT) : 3001
 
 // We create our own instance of express here. This is not required
@@ -71,12 +72,15 @@ agent.registerOutboundTransport(wsOutboundTransport)
 
 // Allow to create invitation, no other way to ask for invitation yet
 httpInboundTransport.app.get('/invitation', async (req, res) => {
+  const httpEndpoint = config.endpoints.find((e) => e.startsWith('http'))
   if (typeof req.query.c_i === 'string') {
     const invitation = ConnectionInvitationMessage.fromUrl(req.url)
     res.send(invitation.toJSON())
+  } else if (useLegacyInvitation) {
+    const { invitation } = await agent.oob.createLegacyInvitation()
+    res.send(invitation.toUrl({ domain: httpEndpoint + '/invitation' }))
   } else {
     const { outOfBandInvitation } = await agent.oob.createInvitation()
-    const httpEndpoint = config.endpoints.find((e) => e.startsWith('http'))
     res.send(outOfBandInvitation.toUrl({ domain: httpEndpoint + '/invitation' }))
   }
 })
