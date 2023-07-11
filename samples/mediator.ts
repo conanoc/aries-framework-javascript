@@ -72,7 +72,7 @@ agent.registerOutboundTransport(wsOutboundTransport)
 
 // Allow to create invitation, no other way to ask for invitation yet
 httpInboundTransport.app.get('/invitation', async (req, res) => {
-  const httpEndpoint = config.endpoints.find((e) => e.startsWith('http'))
+  const httpEndpoint = "http://localhost"
   if (typeof req.query.c_i === 'string') {
     const invitation = ConnectionInvitationMessage.fromUrl(req.url)
     res.send(invitation.toJSON())
