@@ -40,7 +40,7 @@ const socketServer = new Server({ noServer: true })
 
 const endpoints = process.env.AGENT_ENDPOINTS?.split(',') ?? [`http://localhost:${port}`, `ws://localhost:${port}`]
 
-const logger = new TestLogger(LogLevel.info)
+const logger = new TestLogger(LogLevel.debug)
 
 const agentConfig: InitConfig = {
   endpoints,
@@ -57,6 +57,7 @@ const agentConfig: InitConfig = {
 // Set up agent
 const agent = new Agent(agentConfig, agentDependencies)
 const config = agent.dependencyManager.resolve(AgentConfig)
+// config.agentDependencies.indy.setDefaultLogger('trace')
 
 // Create all transports
 const httpInboundTransport = new HttpInboundTransport({ app, port })
