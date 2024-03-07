@@ -1,4 +1,4 @@
-import type { RegisterCredentialDefinitionReturnStateFinished } from '@credo-ts/anoncreds'
+import { getUnqualifiedCredentialDefinitionId, parseIndyCredentialDefinitionId, type RegisterCredentialDefinitionReturnStateFinished } from '@credo-ts/anoncreds'
 import type { ConnectionRecord, ConnectionStateChangedEvent } from '@credo-ts/core'
 import type { IndyVdrRegisterSchemaOptions, IndyVdrRegisterCredentialDefinitionOptions } from '@credo-ts/indy-vdr'
 import type BottomBar from 'inquirer/lib/ui/bottom-bar'
@@ -193,6 +193,12 @@ export class Faber extends BaseAgent {
     return this.credentialDefinition
   }
 
+  private legacyCredDefId() {
+    const { namespaceIdentifier, schemaSeqNo, tag } = parseIndyCredentialDefinitionId(this.credentialDefinition?.credentialDefinitionId as string)
+    const legacyCredentialDefinitionId = getUnqualifiedCredentialDefinitionId(namespaceIdentifier, schemaSeqNo, tag)
+    return legacyCredentialDefinitionId
+  }
+
   public async issueCredential() {
     const schema = await this.registerSchema()
     const credentialDefinition = await this.registerCredentialDefinition(schema.schemaId)
@@ -202,9 +208,9 @@ export class Faber extends BaseAgent {
 
     await this.agent.credentials.offerCredential({
       connectionId: connectionRecord.id,
-      protocolVersion: 'v2',
+      protocolVersion: 'v1',
       credentialFormats: {
-        anoncreds: {
+        indy: {
           attributes: [
             {
               name: 'name',
@@ -219,7 +225,7 @@ export class Faber extends BaseAgent {
               value: '01/01/2022',
             },
           ],
-          credentialDefinitionId: credentialDefinition.credentialDefinitionId,
+          credentialDefinitionId: this.legacyCredDefId(),
         },
       },
     })
@@ -240,7 +246,7 @@ export class Faber extends BaseAgent {
         name: 'name',
         restrictions: [
           {
-            cred_def_id: this.credentialDefinition?.credentialDefinitionId,
+            cred_def_id: this.legacyCredDefId(),
           },
         ],
       },
@@ -255,10 +261,10 @@ export class Faber extends BaseAgent {
     await this.printProofFlow(greenText('\nRequesting proof...\n', false))
 
     await this.agent.proofs.requestProof({
-      protocolVersion: 'v2',
+      protocolVersion: 'v1',
       connectionId: connectionRecord.id,
       proofFormats: {
-        anoncreds: {
+        indy: {
           name: 'proof-request',
           version: '1.0',
           requested_attributes: proofAttribute,
