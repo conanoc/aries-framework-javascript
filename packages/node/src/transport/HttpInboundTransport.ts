@@ -41,7 +41,7 @@ export class HttpInboundTransport implements InboundTransport {
       if (!contentType || !supportedContentTypes.includes(contentType)) {
         return res
           .status(415)
-          .send('Unsupported content-type. Supported content-types are: ' + supportedContentTypes.join(', '))
+          .send(`Unsupported content-type: ${contentType}. Supported content-types are: ` + supportedContentTypes.join(', '))
       }
 
       const session = new HttpTransportSession(utils.uuid(), req, res)
